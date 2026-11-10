@@ -1,0 +1,19 @@
+# Compare WebGPU and Canvas 2D for the zgui browser demos.
+
+# Install Playwright. It drives the installed Google Chrome, so no browser is downloaded.
+install:
+    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install --no-fund --no-audit
+
+# Benchmark the deployed site: `just bench`, `just bench --headed --runs 5`, `just bench --only ui`
+bench *ARGS: install
+    node bench.mjs {{ARGS}}
+
+# Benchmark a local site whose ui/ and mind-map/ folders hold the two demos.
+bench-local DIR *ARGS: install
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 -m http.server 8740 --bind 127.0.0.1 --directory "{{DIR}}" >/dev/null 2>&1 &
+    server=$!
+    trap 'kill $server' EXIT
+    sleep 1
+    node bench.mjs --base http://127.0.0.1:8740 {{ARGS}}
